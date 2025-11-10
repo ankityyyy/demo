@@ -1,10 +1,10 @@
 import express from "express";
 const app=express();
-import { Sum } from "./Su.js"
+import { Sum } from "./Sum.js";
 
 let port=5000;
 
- const a=2;
+//  const a=2;
 
 app.get("/test",(req,res)=>{
      res.json({message:"i am root user"});
