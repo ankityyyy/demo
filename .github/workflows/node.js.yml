@@ -1,4 +1,4 @@
-name: ci/backend
+name: node.js.yml
 
 on:
   push:

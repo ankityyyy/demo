@@ -4,7 +4,7 @@ import { Sum } from "./Su.js"
 
 let port=5000;
 
-// const a=2;
+ const a=2;
 
 app.get("/test",(req,res)=>{
      res.json({message:"i am root user"});
