@@ -1,14 +1,16 @@
-name: node.js.yml
+name: node.js
 
 on:
   push:
-     branches: 
-       - main
-  pull:
-    branches: ['main']  
-  paths:
-      - 'backend/**' #This is a filter.CI only runs if files inside backend folder changed.If frontend files change workflow stays asleep. 
-
+    branches:
+      - main
+    paths:
+      - backend/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - backend/**
 jobs:
   build:
     runs-on: ubuntu-latest
