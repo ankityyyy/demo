@@ -1,6 +1,6 @@
 import express from "express";
 const app=express();
-import { Su } from "./Sum.js";
+import { Sum } from "./Sum.js";
 
 let port=5000;
 
