@@ -21,7 +21,7 @@ function add(a,b){
      console.log(a+b);
 }
 
-add("5",5);
+add(5,5);
 
 app.listen(port,()=>{
      console.log(`app is listen on ${port} `)
