@@ -10,6 +10,10 @@ app.get("/test",(req,res)=>{
      res.json({message:"i am root user"});
 })
 
+app.get("/t",(req,res)=>{
+     res.json({message:"i am  user"});
+})
+
 app.get("/getSum/:a/:b",async(req,res)=>{
      const {a,b}=req.params;
      res.json({
