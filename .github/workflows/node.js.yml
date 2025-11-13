@@ -59,6 +59,8 @@ on:
     branches: [ main ]
     paths: [ backend/** ]
 
+  workflow_dispatch:   # ✅ Allows manual trigger from GitHub Actions tab
+
 permissions:
   contents: read
 
@@ -67,9 +69,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   # -----------------------------------------------------------
-  # Install deps once and re-use cache across jobs
+  # Job 1: Setup Node.js version (shared across jobs)
   # -----------------------------------------------------------
   setup:
     runs-on: self-hosted
@@ -82,7 +83,7 @@ jobs:
         run: echo "version=18.x" >> $GITHUB_OUTPUT
 
   # -----------------------------------------------------------
-  # Job 1: Lint
+  # Job 2: Lint
   # -----------------------------------------------------------
   lint:
     needs: setup
@@ -90,7 +91,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -103,7 +104,7 @@ jobs:
         run: npm run lint --if-present
 
   # -----------------------------------------------------------
-  # Job 2: Tests + Coverage
+  # Job 3: Tests + Coverage
   # -----------------------------------------------------------
   test:
     needs: setup
@@ -130,7 +131,7 @@ jobs:
           path: coverage/lcov-report
 
   # -----------------------------------------------------------
-  # Job 3: Security Scan
+  # Job 4: Security Scan
   # -----------------------------------------------------------
   security:
     needs: setup
@@ -151,7 +152,7 @@ jobs:
         run: npm audit --audit-level=high
 
   # -----------------------------------------------------------
-  # Job 4: Build for all Node versions (matrix)
+  # Job 5: Build for all Node versions (matrix)
   # -----------------------------------------------------------
   build:
     needs: setup
@@ -171,4 +172,31 @@ jobs:
 
       - run: npm ci
       - run: npm run build --if-present
-      - run:  pm2 start demo/server.js --name backend
+
+  # -----------------------------------------------------------
+  # Job 6: Deploy & Restart Backend with PM2
+  # -----------------------------------------------------------
+  deploy:
+    needs: [build]        # runs only after build finishes successfully
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build --if-present
+
+      - name: Restart backend with PM2
+        run: |
+          pm2 stop backend || true
+          pm2 start server.js --name backend
+          pm2 save
