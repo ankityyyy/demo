@@ -10,7 +10,7 @@ app.get("/test",(req,res)=>{
      res.json({message:"i am root user"});
 })
 
-app.get("/te",(req,res)=>{
+app.get("/t",(req,res)=>{
      res.json({message:"i am  user"});
 })
 
