@@ -177,26 +177,26 @@ jobs:
   # Job 6: Deploy & Restart Backend with PM2
   # -----------------------------------------------------------
   deploy:
-    needs: [build]        # runs only after build finishes successfully
-    runs-on: self-hosted
+  needs: [build]        # runs only after build finishes successfully
+  runs-on: self-hosted
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci
 
-      - name: Build project
-        run: npm run build --if-present
+    - name: Build project
+      run: npm run build --if-present
 
-      - name: Restart backend with PM2
-        run: |
-          pm2 stop backend || true
-          pm2 start server.js --name backend
-          pm2 save
+    - name: Restart backend with PM2
+      run: |
+        pm2 stop backend || true
+        pm2 start /home/ubuntu/backend-runner/_work/demo/demo/server.js --name backend
+        pm2 save
