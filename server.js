@@ -11,7 +11,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/healt', (req, res) => {
-  res.status(20).send('OK');
+  res.send('OK i am change');
 });
 
 app.get("/ty",(req,res)=>{
