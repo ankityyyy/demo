@@ -1,0 +1,122 @@
+name: ci/cd
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read  
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+        
+# Job 2: Lint
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+           node-version: ${{matrix.node-version}}
+        
+           cache: 'npm'
+      - run: npm ci
+      - name: Run Lint
+        run: npm run lint --if-present
+       
+       
+ # Job 3: Tests + Coverage
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+           node-version: ${{matrix.node-version}}
+           cache: 'npm'
+           
+      - run: npm ci
+
+      - name: type check
+        run: npm run typecheck --if-present
+
+      - name: run test with converage
+        run:  npm test -- --coverage   
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov-report
+
+# Job 4: Security Scan 
+  security:       
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+           node-version: ${{matrix.node-version}}
+           cache: 'npm'
+           
+      - run: npm ci
+      
+      - name: Security Scan
+        run: npm audit --audit-level=high
+
+# Deploy & Restart Backend with PM2   
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+           node-version: ${{matrix.node-version}}
+           
+           
+      - run: npm ci
+      
+      - name: Build project
+        run: npm run build --if-present 
+
+      - name: Build project
+        run: |
+          pm2 delete backend || true
+          pm2 start $GITHUB_WORKSPACE/server.js --name backend
+          pm2 save  
+        
+        
+
+
+
+          
+

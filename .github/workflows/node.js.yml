@@ -49,17 +49,172 @@
 
 
 
-name: node.js CI
+# name: node.js CI
+
+# on:
+#   push:
+#     branches: [ main ]
+
+#   pull_request:
+#     branches: [ main ]
+#     paths: [ backend/** ]
+
+#   workflow_dispatch:   # ✅ Allows manual trigger from GitHub Actions tab
+
+# permissions:
+#   contents: read
+
+# concurrency:
+#   group: ci-${{ github.ref }}
+#   cancel-in-progress: true
+
+# jobs:
+#   # -----------------------------------------------------------
+#   # Job 1: Setup Node.js version (shared across jobs)
+#   # -----------------------------------------------------------
+#   setup:
+#     runs-on: self-hosted
+#     outputs:
+#       node-version: ${{ steps.setversion.outputs.version }}
+
+#     steps:
+#       - name: Set node version
+#         id: setversion
+#         run: echo "version=18.x" >> $GITHUB_OUTPUT
+
+#   # -----------------------------------------------------------
+#   # Job 2: Lint
+#   # -----------------------------------------------------------
+#   lint:
+#     needs: setup
+#     runs-on: self-hosted
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Use Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18.x
+#           cache: 'npm'
+
+#       - run: npm ci
+
+#       - name: Run Lint
+#         run: npm run lint --if-present
+
+#   # -----------------------------------------------------------
+#   # Job 3: Tests + Coverage
+#   # -----------------------------------------------------------
+#   test:
+#     needs: setup
+#     runs-on: self-hosted
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Use Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18.x
+#           cache: 'npm'
+
+#       - run: npm ci
+
+#       - name: Run Tests with Coverage
+#         run: npm test -- --coverage
+
+#       - name: Upload Coverage
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: coverage-report
+#           path: coverage/lcov-report
+
+#   # -----------------------------------------------------------
+#   # Job 4: Security Scan
+#   # -----------------------------------------------------------
+#   security:
+#     needs: setup
+#     runs-on: self-hosted
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Use Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18.x
+#           cache: 'npm'
+
+#       - run: npm ci
+
+#       - name: Security Scan
+#         run: npm audit --audit-level=high
+
+#   # -----------------------------------------------------------
+#   # Job 5: Build for all Node versions (matrix)
+#   # -----------------------------------------------------------
+#   build:
+#     needs: setup
+#     runs-on: self-hosted
+#     strategy:
+#       matrix:
+#         node-version: [18.x, 20.x, 22.x]
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Use Node.js ${{ matrix.node-version }}
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: ${{ matrix.node-version }}
+#           cache: 'npm'
+
+#       - run: npm ci
+#       - run: npm run build --if-present
+
+#   # -----------------------------------------------------------
+#   # Job 6: Deploy & Restart Backend with PM2
+#   # -----------------------------------------------------------
+#   deploy:
+#     needs: [build]        # runs only after build finishes successfully
+#     runs-on: self-hosted
+
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v4
+
+#       - name: Use Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18.x
+
+#       - name: Install dependencies
+#         run: npm ci
+
+#       - name: Build project
+#         run: npm run build --if-present
+
+#       - name: Restart backend with PM2
+#         run: |
+#           pm2 delete backend || true
+#           pm2 start $GITHUB_WORKSPACE/server.js --name backend
+#           pm2 save
+
+
+
+name: Node.js CI
 
 on:
   push:
-    branches: [ main ]
-
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-    paths: [ backend/** ]
-
-  workflow_dispatch:   # ✅ Allows manual trigger from GitHub Actions tab
+    branches:
+      - main
+    paths:
+      - "backend/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -69,135 +224,93 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # -----------------------------------------------------------
-  # Job 1: Setup Node.js version (shared across jobs)
-  # -----------------------------------------------------------
-  setup:
-    runs-on: self-hosted
-    outputs:
-      node-version: ${{ steps.setversion.outputs.version }}
 
-    steps:
-      - name: Set node version
-        id: setversion
-        run: echo "version=18.x" >> $GITHUB_OUTPUT
-
-  # -----------------------------------------------------------
-  # Job 2: Lint
-  # -----------------------------------------------------------
   lint:
-    needs: setup
     runs-on: self-hosted
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
-          cache: 'npm'
+          node-version: 22.x
+          cache: "npm"
 
       - run: npm ci
+      - run: npm run lint --if-present
 
-      - name: Run Lint
-        run: npm run lint --if-present
 
-  # -----------------------------------------------------------
-  # Job 3: Tests + Coverage
-  # -----------------------------------------------------------
   test:
-    needs: setup
     runs-on: self-hosted
-
+    needs: lint
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
-          cache: 'npm'
+          node-version: 22.x
+          cache: "npm"
 
       - run: npm ci
+      - run: npm run typecheck --if-present
+      - run: npm test -- --coverage
 
-      - name: Run Tests with Coverage
-        run: npm test -- --coverage
-
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/lcov-report
 
-  # -----------------------------------------------------------
-  # Job 4: Security Scan
-  # -----------------------------------------------------------
+
   security:
-    needs: setup
     runs-on: self-hosted
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+
+  docker-build:
+    runs-on: self-hosted
+    needs: security
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Security Scan
-        run: npm audit --audit-level=high
-
-  # -----------------------------------------------------------
-  # Job 5: Build for all Node versions (matrix)
-  # -----------------------------------------------------------
-  build:
-    needs: setup
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-
-      - run: npm ci
-      - run: npm run build --if-present
-
-  # -----------------------------------------------------------
-  # Job 6: Deploy & Restart Backend with PM2
-  # -----------------------------------------------------------
-  deploy:
-    needs: [build]        # runs only after build finishes successfully
-    runs-on: self-hosted
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
-        run: npm run build --if-present
-
-      - name: Restart backend with PM2
+      - name: Login to Docker Hub
         run: |
-          pm2 delete backend || true
-          pm2 start $GITHUB_WORKSPACE/server.js --name backend
-          pm2 save
+          echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: docker build -t ankitdockerd/demo:latest .
+
+      - name: Push Docker Image
+        run: docker push ankitdockerd/demo:latest
+
+
+  deploy:
+    runs-on: self-hosted
+    needs: docker-build
+
+    steps:
+      - name: Pull Latest Docker Image
+        run: docker pull ankitdockerd/demo:latest
+
+      - name: Stop old container
+        run: docker stop backend || true
+
+      - name: Remove old container
+        run: docker rm backend || true
+
+      - name: Start new backend container
+        run: |
+          docker run -d \
+            --name backend \
+            -p 5000:5000 \
+            ankitdockerd/demo:latest
 

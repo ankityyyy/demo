@@ -1,0 +1,138 @@
+name: ci/cd backend
+on:
+  push:
+  branches:
+    - main
+
+  pull_request:
+  branches:
+    - main
+  paths: [ "backend/**" ]  
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint: 
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4    
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with: 
+          node-version: ${{matrix.node-version}}
+        
+          cache: 'npm'
+
+      - run: npm ci   
+      - name: Run Lint 
+      - run: npm run lint --if-present
+
+# Job 3: Tests + Coverage
+  test:
+    runs-on: self-hosted
+    strategy:
+    matrix:
+      node-version: [22.x]
+
+    steps: 
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+          node-version: [22.x]
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: type check
+        run: npm run typecheck --if-present
+
+      - name: run test with coverage 
+        run: npm test -- --coverage  
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov-report
+
+# Job 4: Security Scan 
+
+  Security:
+    runs-on: self-hosted
+    strategy:
+    matrix:
+      node-version: [22.x]
+       
+    steps: 
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}}
+          cache: 'npm'
+
+      - run: npm ci
+      - name: Security Scan
+        run:  npm audit --audit-level=high    
+      
+# Job 5: Build Docker Image + Push to Docker Hub
+  build:
+    runs-on: self-hosted
+    strategy:
+    matrix:
+      node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: use node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build Docker Image
+        run: docker build -t ankitdockerd/demo:latest .
+
+      - name: Push Docker Image
+        run: docker push ankitdockerd/demo:latest
+
+# Job 6: Deploy to EC2 using Docker Image        
+  deploy:
+    needs: docker-build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull Latest Docker Image
+        run: docker pull ankitdockerd/demo:latest
+
+      - name: Stop old container
+        run: docker stop backend || true
+
+      - name: Remove old container
+        run: docker rm backend || true
+
+      - name: Start new backend container
+        run: |
+          docker run -d \
+            --name backend \
+            -p 5000:5000 \
+            ankitdockerd/demo:latest
+
+      
+
+
+
+         
+

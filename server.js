@@ -6,9 +6,9 @@ let port=5000;
 
   const a=2;
 
-app.get("/test",(req,res)=>{
-     res.json({message:"i am root user"});
-})
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 app.get("/ty",(req,res)=>{
      res.json({message:"i am  user"});

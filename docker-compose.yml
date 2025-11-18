@@ -1,0 +1,8 @@
+
+services:
+   myapp:
+     image: ankitdockerd/demo:1.0.0
+     container_name: backend
+     ports:
+     - "5002:5000"
+     restart: always    
