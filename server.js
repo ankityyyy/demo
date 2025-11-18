@@ -10,6 +10,10 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+app.get('/healt', (req, res) => {
+  res.status(20).send('OK');
+});
+
 app.get("/ty",(req,res)=>{
      res.json({message:"i am  user"});
 })
