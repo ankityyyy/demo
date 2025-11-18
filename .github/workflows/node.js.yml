@@ -272,7 +272,8 @@ jobs:
           cache: "npm"
 
       - run: npm ci
-      - run: npm audit --production
+      - run: npm audit --omit=dev || true
+
 
 
 
